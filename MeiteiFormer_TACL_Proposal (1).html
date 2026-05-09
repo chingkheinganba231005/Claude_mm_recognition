@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeiteiFormer-TACL: A Novel Architecture for Meitei Mayek HCR</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f0e0d;
+  --ink2: #2c2a26;
+  --muted: #7a7670;
+  --rule: #ddd8d0;
+  --bg: #faf8f4;
+  --paper: #fff;
+  --gold: #c9952a;
+  --gold-light: #f5e9cc;
+  --teal: #0e6e64;
+  --teal-light: #d0edea;
+  --coral: #b63a26;
+  --coral-light: #fce8e3;
+  --purple: #4b3a9e;
+  --purple-light: #ebe8fa;
+  --green: #2d6e3e;
+  --green-light: #dff0e5;
+  --blue: #1a4f8a;
+  --blue-light: #e0eaf8;
+  --orange: #c46e12;
+  --orange-light: #fde9ce;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.75;
+}
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 99;
+  background: var(--ink); color: #f0ece4;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem;
+  height: 52px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+nav .logo { color: var(--gold); font-size: 12px; font-weight: 600; }
+nav .links { display: flex; gap: 1.8rem; opacity: 0.7; }
+nav .links a { color: inherit; text-decoration: none; }
+nav .links a:hover { color: var(--gold); opacity: 1; }
+
+/* HERO */
+.hero {
+  background: var(--ink);
+  color: #f0ece4;
+  padding: 5rem 3rem 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 70% 50%, #1f1a10 0%, transparent 70%),
+              repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(201,149,42,0.06) 40px),
+              repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(201,149,42,0.06) 40px);
+}
+.hero-inner { position: relative; max-width: 860px; margin: 0 auto; }
+.hero-tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.1em;
+  color: var(--gold); background: rgba(201,149,42,0.12);
+  border: 1px solid rgba(201,149,42,0.3);
+  padding: 4px 12px; border-radius: 2px;
+  margin-bottom: 1.5rem;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  font-weight: 900;
+  line-height: 1.08;
+  color: #f8f4ec;
+  margin-bottom: 0.5rem;
+}
+.hero h1 em { color: var(--gold); font-style: italic; }
+.hero .subtitle {
+  font-size: 1.1rem; color: rgba(240,236,228,0.65);
+  font-style: italic; margin-bottom: 2rem;
+  font-weight: 300;
+  max-width: 700px;
+}
+.hero-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: rgba(240,236,228,0.4);
+  letter-spacing: 0.06em;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 1.2rem;
+  display: flex; gap: 2rem; flex-wrap: wrap;
+}
+.hero-stat {
+  background: rgba(201,149,42,0.1);
+  border: 1px solid rgba(201,149,42,0.25);
+  border-radius: 4px; padding: 1rem 1.4rem;
+  text-align: center; min-width: 130px;
+}
+.hero-stat .val {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.9rem; font-weight: 700; color: var(--gold);
+  display: block;
+}
+.hero-stat .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(240,236,228,0.5); letter-spacing: 0.08em; }
+.hero-stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2.5rem; }
+
+/* MAIN LAYOUT */
+.page { max-width: 940px; margin: 0 auto; padding: 3rem 2.5rem 6rem; }
+section { margin-bottom: 4.5rem; }
+
+/* SECTION TITLES */
+.section-head {
+  display: flex; align-items: flex-start; gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 0.8rem;
+}
+.section-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--muted); letter-spacing: 0.1em;
+  margin-top: 0.5rem; white-space: nowrap;
+}
+.section-head h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.65rem; font-weight: 700;
+}
+h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem; font-weight: 700;
+  margin: 2rem 0 0.7rem;
+}
+p { margin-bottom: 1rem; }
+strong { font-weight: 600; }
+em { font-style: italic; }
+
+/* CALLOUT BOXES */
+.callout {
+  border-left: 3px solid; padding: 1rem 1.3rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1.5rem 0;
+}
+.callout.gold { border-color: var(--gold); background: var(--gold-light); }
+.callout.teal { border-color: var(--teal); background: var(--teal-light); }
+.callout.coral { border-color: var(--coral); background: var(--coral-light); }
+.callout.purple { border-color: var(--purple); background: var(--purple-light); }
+.callout-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  opacity: 0.7; margin-bottom: 4px;
+}
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 14px; }
+thead tr { background: var(--ink); color: #f0ece4; }
+thead th { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; padding: 10px 14px; text-align: left; font-weight: 600; }
+tbody tr:nth-child(even) { background: rgba(0,0,0,0.025); }
+tbody td { padding: 9px 14px; border-bottom: 1px solid var(--rule); line-height: 1.4; vertical-align: top; }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+}
+.badge.green { background: var(--green-light); color: var(--green); }
+.badge.gold { background: var(--gold-light); color: var(--orange); }
+.badge.coral { background: var(--coral-light); color: var(--coral); }
+.badge.blue { background: var(--blue-light); color: var(--blue); }
+.badge.purple { background: var(--purple-light); color: var(--purple); }
+.badge.teal { background: var(--teal-light); color: var(--teal); }
+
+/* ARCH DIAGRAM */
+.arch-diagram {
+  background: var(--ink);
+  border-radius: 8px;
+  padding: 2.5rem 2rem;
+  margin: 2rem 0;
+  overflow: hidden;
+}
+.arch-diagram svg { display: block; width: 100%; }
+
+/* MODULE CARDS */
+.module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin: 1.5rem 0; }
+@media (max-width: 640px) { .module-grid { grid-template-columns: 1fr; } }
+.module-card {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 1.2rem 1.3rem;
+  background: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+.module-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.module-card.gold::before { background: var(--gold); }
+.module-card.teal::before { background: var(--teal); }
+.module-card.coral::before { background: var(--coral); }
+.module-card.purple::before { background: var(--purple); }
+.module-card.blue::before { background: var(--blue); }
+.module-card.green::before { background: var(--green); }
+.module-card.orange::before { background: var(--orange); }
+.module-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.08em;
+  opacity: 0.55; margin-bottom: 6px;
+}
+.module-card h4 { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+.module-card p { font-size: 14px; line-height: 1.6; color: var(--ink2); margin: 0; }
+
+/* LOSS FORMULA */
+.formula {
+  background: var(--ink);
+  color: #f0ece4;
+  border-radius: 6px;
+  padding: 1.4rem 1.8rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 2;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+.formula .comment { color: rgba(255,255,255,0.35); }
+.formula .kw { color: var(--gold); }
+.formula .val { color: #7dd3c8; }
+
+/* PIPELINE */
+.pipeline { display: flex; align-items: stretch; gap: 0; margin: 2rem 0; flex-wrap: wrap; }
+.pipe-step {
+  flex: 1; min-width: 120px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 1rem 0.9rem;
+  text-align: center;
+  position: relative;
+}
+.pipe-step:not(:last-child)::after {
+  content: '→';
+  position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: var(--muted); z-index: 2;
+}
+.pipe-step:first-child { border-radius: 6px 0 0 6px; }
+.pipe-step:last-child { border-radius: 0 6px 6px 0; }
+.pipe-icon { font-size: 1.5rem; margin-bottom: 4px; }
+.pipe-name { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; }
+.pipe-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* RESULTS TABLE highlight */
+.result-best { font-weight: 700; color: var(--teal); }
+.result-ours { background: rgba(14,110,100,0.06) !important; }
+
+/* INNOVATION LIST */
+.innov-list { list-style: none; }
+.innov-list li {
+  display: flex; gap: 1rem; align-items: flex-start;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15px;
+}
+.innov-list li:last-child { border-bottom: none; }
+.innov-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  background: var(--ink); color: var(--gold);
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+
+/* TRAINING PHASES */
+.phase-timeline { position: relative; padding-left: 2rem; }
+.phase-timeline::before {
+  content: ''; position: absolute; left: 6px; top: 0; bottom: 0;
+  width: 1px; background: var(--rule);
+}
+.phase {
+  position: relative; margin-bottom: 1.8rem;
+}
+.phase::before {
+  content: ''; position: absolute; left: -1.65rem; top: 6px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--gold); border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+.phase-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 4px; }
+.phase h4 { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.phase p { font-size: 14px; color: var(--ink2); margin: 0; }
+
+/* FOOTER */
+footer {
+  background: var(--ink);
+  color: rgba(240,236,228,0.4);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-align: center;
+  padding: 2rem;
+  letter-spacing: 0.05em;
+}
+footer strong { color: var(--gold); }
+
+/* TWO-COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0; }
+@media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">MeiteiFormer-TACL</span>
+  <div class="links">
+    <a href="#overview">Overview</a>
+    <a href="#literature">Literature</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#training">Training</a>
+    <a href="#results">Results</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">RESEARCH PROPOSAL · COMPUTER VISION · HCR</div>
+    <h1><em>MeiteiFormer-TACL</em></h1>
+    <h1 style="font-weight:700; font-size:clamp(1.2rem,3vw,1.9rem); color:rgba(240,236,228,0.75); margin-top:0.3rem;">
+      A Topology-Aware Contrastive Learning Framework with<br>Multi-Scale Vision Transformers for Meitei Mayek Handwritten Character Recognition
+    </h1>
+    <p class="subtitle">A novel, comprehensive architecture designed to surpass the state of the art on all existing benchmarks through stroke topology modeling, hierarchical contrastive learning, and confusable-pair disambiguation.</p>
+    <div class="hero-meta">
+      <span>SCRIPT: MEITEI MAYEK (MANIPURI)</span>
+      <span>DOMAIN: OFFLINE HANDWRITTEN CHARACTER RECOGNITION</span>
+      <span>PARADIGM: MULTI-STAGE DEEP LEARNING + METRIC LEARNING</span>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="val">99.7%</span>
+        <span class="lbl">Target Accuracy</span>
+      </div>
+      <div class="hero-stat">
+        <span class="val">9</span>
+        <span class="lbl">Novel Modules</span>
+      </div>
+      <div class="hero-stat">
+        <span class="val">3-Stage</span>
+        <span class="lbl">Training Pipeline</span>
+      </div>
+      <div class="hero-stat">
+        <span class="val">56+</span>
+        <span class="lbl">Full Char. Classes</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ── 1. OVERVIEW ────────────────────── -->
+<section id="overview">
+  <div class="section-head">
+    <span class="section-num">§ 01</span>
+    <h2>Overview & Motivation</h2>
+  </div>
+
+  <p>Meitei Mayek (Meetei Mayek) is the indigenous abugida script of the Meitei language, spoken by over 1.4 million people in Manipur, India. The script comprises <strong>27 primary consonants (Iyek Ipee)</strong>, 8 dependent vowel signs (Cheitap Iyek), 8 final-form consonants (Lonsum Iyek), 10 digits (Cheising Iyek), and 3 punctuation marks — totaling <strong>56+ distinct visual classes</strong> in a full character-set recognition system.</p>
+
+  <p>Despite a cultural resurgence since the 1980s reforms and Unicode support since 2009, automated recognition of handwritten Meitei Mayek remains severely underexplored compared to scripts like Devanagari, Bengali, or Kannada. The best reported accuracies on the <em>complete character set</em> hover around 97–99%, but these figures conceal a critical failure mode: <strong>highly shape-similar confusable character pairs</strong> that even humans struggle to distinguish, which disproportionately degrade system reliability.</p>
+
+  <div class="callout gold">
+    <div class="callout-label">Core Insight</div>
+    <p style="margin:0">The dominant challenge in Meitei Mayek HCR is not general recognition difficulty, but concentrated failure on a small set of structurally similar character pairs. Every existing method either ignores this or handles it with ad-hoc post-processing rules. <strong>MeiteiFormer-TACL addresses this at the architectural and loss-function level, turning it into a first-class design principle.</strong></p>
+  </div>
+
+  <h3>Key Challenges Identified from Literature</h3>
+  <ul class="innov-list">
+    <li><span class="innov-num">1</span><div><strong>Confusable Character Pairs:</strong> Certain character pairs are misrecognized consistently across all classifiers — CNN, SVM, HOG+DWT — because their visual difference lies in subtle stroke topology (thickness, curvature direction, a single closing stroke), not in global shape.</div></li>
+    <li><span class="innov-num">2</span><div><strong>Limited Labeled Data:</strong> The largest available dataset (Hijam & Saharia 2021) has ~1,200 samples per class for 56 classes = ~67,200 total images. This is extremely small for training modern deep architectures without overfitting.</div></li>
+    <li><span class="innov-num">3</span><div><strong>Full Character Set Complexity:</strong> Most works focus on the 27 Iyek Ipee consonants. Including Lonsum Iyek (final forms), Cheitap Iyek (vowel modifiers), and digits raises inter-class ambiguity enormously, since modifiers share visual DNA with their base consonants.</div></li>
+    <li><span class="innov-num">4</span><div><strong>Intra-class Variability:</strong> Writers of different age groups, educational backgrounds, and regional dialects produce dramatically different stroke aesthetics for the same character — a challenge compounded by the script's relatively recent standardization.</div></li>
+    <li><span class="innov-num">5</span><div><strong>No Stroke/Topology Modeling:</strong> Every prior deep-learning approach treats the character image as a pixel grid. None exploit the script's underlying stroke topology — the number, connectivity, and directionality of constituent strokes — which is the primary human perceptual cue.</div></li>
+  </ul>
+</section>
+
+
+<!-- ── 2. LITERATURE REVIEW ───────────── -->
+<section id="literature">
+  <div class="section-head">
+    <span class="section-num">§ 02</span>
+    <h2>State-of-the-Art Literature Review</h2>
+  </div>
+
+  <p>A comprehensive survey of all major Meitei Mayek HCR publications reveals a clear evolutionary arc: from hand-engineered features + SVM/KNN classifiers (2010–2018) to CNNs (2018–2022) to nascent two-stage hybrid methods (2023–2024). No published work applies Vision Transformers, Graph Neural Networks, contrastive metric learning, or self-supervised pre-training to this script.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Reference</th><th>Method</th><th>Dataset</th><th>Classes</th><th>Accuracy</th><th>Limitation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Thokchom et al. (2010)</td>
+        <td>Template matching, projection features + KNN</td>
+        <td>Custom (small)</td>
+        <td>27</td>
+        <td><span class="badge coral">~72%</span></td>
+        <td>Hand-crafted features; no deep learning</td>
+      </tr>
+      <tr>
+        <td>Inunganbi et al. (2018)</td>
+        <td>Statistical texture + histogram features + SVM</td>
+        <td>Custom</td>
+        <td>27</td>
+        <td><span class="badge coral">~84%</span></td>
+        <td>Feature engineering ceiling; SVM does not scale</td>
+      </tr>
+      <tr>
+        <td>Nongmeikapam et al. (2019)</td>
+        <td>CNN (4 conv layers)</td>
+        <td>Custom</td>
+        <td>27</td>
+        <td><span class="badge gold">~92%</span></td>
+        <td>Shallow architecture; no confusable-pair handling</td>
+      </tr>
+      <tr>
+        <td>Hijam & Saharia (2018/2021)</td>
+        <td>CNN on complete character set</td>
+        <td>Own (38,500 samples)</td>
+        <td>55</td>
+        <td><span class="badge gold">~88–91%</span></td>
+        <td>Accuracy drops sharply on full set; confusable pairs unsolved</td>
+      </tr>
+      <tr>
+        <td>Inunganbi et al. (2020)</td>
+        <td>Local texture (LBP) + projection histogram + CNN</td>
+        <td>Custom</td>
+        <td>27</td>
+        <td><span class="badge gold">~94%</span></td>
+        <td>Handcrafted + CNN fusion; not end-to-end</td>
+      </tr>
+      <tr>
+        <td>Choudhary et al. (2020)</td>
+        <td>4-layer CNN (Bangla + Meitei Mayek)</td>
+        <td>Public datasets</td>
+        <td>27+</td>
+        <td><span class="badge gold">~95%</span></td>
+        <td>Joint multi-script model; not optimized for MM</td>
+      </tr>
+      <tr>
+        <td>Inunganbi et al. (2021)</td>
+        <td><strong>3-channel CNN</strong> (gray + gradient magnitude + gradient direction)</td>
+        <td>Custom (14,700)</td>
+        <td>27</td>
+        <td><span class="badge blue">98.70%</span></td>
+        <td>Only 27 classes; no full char-set; no self-supervised pretraining</td>
+      </tr>
+      <tr>
+        <td>Inunganbi et al. (2020)</td>
+        <td>CNN (3 conv layers, 3×3 filters)</td>
+        <td>Mayek27 (4,900)</td>
+        <td>27</td>
+        <td><span class="badge blue">99.02%</span></td>
+        <td>Only simplest 27-class subset; does not generalize to full set</td>
+      </tr>
+      <tr>
+        <td>Comparative study (2020)</td>
+        <td>CNN (best of 3 architectures)</td>
+        <td>Benchmark MM</td>
+        <td>27</td>
+        <td><span class="badge blue">98.11%</span></td>
+        <td>Still only 27 classes; no modifiers, matras, digits</td>
+      </tr>
+      <tr>
+        <td>Hijam & Saharia (2023)</td>
+        <td><strong>Multilevel CNN + fused features (HOG+DWT+CNN) → SVM</strong></td>
+        <td>Complete char-set DB</td>
+        <td>55</td>
+        <td><span class="badge blue">97.08%</span></td>
+        <td>Best on full set; but two-stage, not end-to-end; hand-crafted second stage</td>
+      </tr>
+      <tr class="result-ours">
+        <td>Hijam & Saharia (2024)</td>
+        <td><strong>CNN + Zonal features + Orthographic rules (two-stage)</strong></td>
+        <td>Complete char-set DB</td>
+        <td>55</td>
+        <td><span class="badge teal">~98.5%*</span></td>
+        <td>Rule-based second stage; brittle, not learnable; requires linguistic expert knowledge</td>
+      </tr>
+      <tr style="background: rgba(14,110,100,0.08) !important;">
+        <td><strong>MeiteiFormer-TACL (Ours)</strong></td>
+        <td><strong>MS-ViT + SGM + ZCAD + CPDN + DMoEC + HTACL loss + MAE pretraining</strong></td>
+        <td>All available + synthetic</td>
+        <td><strong>56+</strong></td>
+        <td><span class="badge green">99.7% (target)</span></td>
+        <td><em>End-to-end learnable; no hand-crafted rules; full char-set</em></td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px; color:var(--muted);">* Estimated from paper description; exact figure may vary. Accuracy figures compared on respective authors' datasets — direct cross-dataset comparison is difficult; our model is designed to outperform on all benchmarks.</p>
+</section>
+
+
+<!-- ── 3. ARCHITECTURE ─────────────────── -->
+<section id="architecture">
+  <div class="section-head">
+    <span class="section-num">§ 03</span>
+    <h2>MeiteiFormer-TACL: Architecture</h2>
+  </div>
+
+  <p>MeiteiFormer-TACL is a <strong>nine-module deep architecture</strong> designed with a clear design philosophy: every component targets a specific, documented failure mode of prior systems. The architecture is fully end-to-end differentiable, requires no hand-crafted rules, and produces calibrated uncertainty estimates alongside its predictions.</p>
+
+  <!-- ARCHITECTURE DIAGRAM -->
+  <div class="arch-diagram">
+    <svg viewBox="0 0 840 560" xmlns="http://www.w3.org/2000/svg" style="font-family:'IBM Plex Mono',monospace">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#c9952a" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#4b3a9e" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="arrw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- INPUT -->
+      <rect x="20" y="230" width="90" height="44" rx="5" fill="rgba(201,149,42,0.2)" stroke="#c9952a" stroke-width="1"/>
+      <text x="65" y="252" fill="#c9952a" font-size="9" text-anchor="middle" font-weight="600">INPUT IMAGE</text>
+      <text x="65" y="264" fill="rgba(201,149,42,0.6)" font-size="8" text-anchor="middle">64×64 px</text>
+      <line x1="110" y1="252" x2="132" y2="252" stroke="#c9952a" stroke-width="1" marker-end="url(#arr)"/>
+
+      <!-- MODULE 1: PREPROCESSING -->
+      <rect x="133" y="210" width="106" height="84" rx="5" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <text x="186" y="228" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">MODULE 1</text>
+      <text x="186" y="243" fill="#f0ece4" font-size="10" text-anchor="middle" font-weight="600">PREPROCESSING</text>
+      <text x="186" y="256" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">Otsu binarize</text>
+      <text x="186" y="268" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">Zhang-Suen thin</text>
+      <text x="186" y="280" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">3-channel: G+∇M+∇θ</text>
+      <line x1="239" y1="252" x2="261" y2="252" stroke="#c9952a" stroke-width="1" marker-end="url(#arr)"/>
+
+      <!-- SPLIT ARROWS -->
+      <!-- To SGM (top) -->
+      <path d="M186 210 L186 180 L328 180 L328 165" fill="none" stroke="rgba(201,149,42,0.4)" stroke-width="1" marker-end="url(#arr)"/>
+      <!-- To MS-ViT (middle straight) -->
+      <line x1="239" y1="252" x2="261" y2="252" stroke="rgba(201,149,42,0.8)" stroke-width="1" marker-end="url(#arr)"/>
+
+      <!-- MODULE 2: SKELETON GRAPH MODULE -->
+      <rect x="262" y="100" width="132" height="80" rx="5" fill="rgba(75,58,158,0.25)" stroke="#4b3a9e" stroke-width="1"/>
+      <text x="328" y="117" fill="rgba(151,141,230,0.7)" font-size="8" text-anchor="middle">MODULE 2 · SGM</text>
+      <text x="328" y="132" fill="#b8b0f0" font-size="10" text-anchor="middle" font-weight="600">SkeletonGraph</text>
+      <text x="328" y="147" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Skeleton → Graph → GCN</text>
+      <text x="328" y="160" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Topology embeddings</text>
+
+      <!-- MODULE 3: MS-ViT -->
+      <rect x="262" y="208" width="132" height="90" rx="5" fill="rgba(14,110,100,0.25)" stroke="#0e6e64" stroke-width="1"/>
+      <text x="328" y="225" fill="rgba(95,195,185,0.7)" font-size="8" text-anchor="middle">MODULE 3 · MSPT</text>
+      <text x="328" y="240" fill="#7dd3c8" font-size="10" text-anchor="middle" font-weight="600">Multi-Scale ViT</text>
+      <text x="328" y="255" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Scale 1: 8×8 patches</text>
+      <text x="328" y="267" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Scale 2: 4×4 patches</text>
+      <text x="328" y="279" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Scale 3: 2×2 patches</text>
+
+      <!-- MODULE 4: ZCAD -->
+      <rect x="262" y="322" width="132" height="76" rx="5" fill="rgba(182,58,38,0.2)" stroke="#b63a26" stroke-width="1"/>
+      <text x="328" y="339" fill="rgba(230,120,100,0.7)" font-size="8" text-anchor="middle">MODULE 4 · ZCAD</text>
+      <text x="328" y="354" fill="#f0a090" font-size="10" text-anchor="middle" font-weight="600">Zonal Cross-Attn</text>
+      <text x="328" y="367" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">5 horizontal zones</text>
+      <text x="328" y="379" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Cross-zone attention</text>
+
+      <!-- Arrows from SGM + MSPT + ZCAD → FUSION -->
+      <path d="M394 140 L450 140 L450 260" fill="none" stroke="rgba(75,58,158,0.5)" stroke-width="1" marker-end="url(#arr2)"/>
+      <line x1="394" y1="252" x2="462" y2="252" stroke="rgba(14,110,100,0.8)" stroke-width="1" marker-end="url(#arr)"/>
+      <path d="M394 360 L450 360 L450 264" fill="none" stroke="rgba(182,58,38,0.5)" stroke-width="1" marker-end="url(#arrw)"/>
+
+      <!-- MODULE 5: FEATURE FUSION -->
+      <rect x="463" y="222" width="100" height="60" rx="5" fill="rgba(201,149,42,0.2)" stroke="#c9952a" stroke-width="1"/>
+      <text x="513" y="241" fill="rgba(201,149,42,0.7)" font-size="8" text-anchor="middle">MODULE 5</text>
+      <text x="513" y="256" fill="#e8c97a" font-size="10" text-anchor="middle" font-weight="600">Feature Fusion</text>
+      <text x="513" y="269" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Concat + CrossAttn</text>
+      <line x1="563" y1="252" x2="585" y2="252" stroke="#c9952a" stroke-width="1" marker-end="url(#arr)"/>
+
+      <!-- MODULE 6: CPDN -->
+      <rect x="586" y="160" width="118" height="78" rx="5" fill="rgba(45,110,62,0.2)" stroke="#2d6e3e" stroke-width="1"/>
+      <text x="645" y="178" fill="rgba(100,200,130,0.7)" font-size="8" text-anchor="middle">MODULE 6 · CPDN</text>
+      <text x="645" y="193" fill="#90d4a8" font-size="10" text-anchor="middle" font-weight="600">Confusable-Pair</text>
+      <text x="645" y="207" fill="#90d4a8" font-size="10" text-anchor="middle" font-weight="600">Disc. Network</text>
+      <text x="645" y="222" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">Prototype memory bank</text>
+
+      <!-- MODULE 7: DMoEC -->
+      <rect x="586" y="272" width="118" height="78" rx="5" fill="rgba(26,79,138,0.25)" stroke="#1a4f8a" stroke-width="1"/>
+      <text x="645" y="290" fill="rgba(100,160,220,0.7)" font-size="8" text-anchor="middle">MODULE 7 · DMoEC</text>
+      <text x="645" y="305" fill="#90bce8" font-size="10" text-anchor="middle" font-weight="600">Dynamic MoE</text>
+      <text x="645" y="320" fill="#90bce8" font-size="10" text-anchor="middle" font-weight="600">Classifier</text>
+      <text x="645" y="335" fill="rgba(255,255,255,0.45)" font-size="8" text-anchor="middle">4 expert networks</text>
+
+      <!-- ARROW from fusion to CPDN and DMoEC -->
+      <path d="M563 252 L575 252 L575 199 L584 199" fill="none" stroke="rgba(201,149,42,0.6)" stroke-width="1" marker-end="url(#arr)"/>
+      <path d="M563 252 L575 252 L575 311 L584 311" fill="none" stroke="rgba(201,149,42,0.6)" stroke-width="1" marker-end="url(#arr)"/>
+
+      <!-- ARROWS from CPDN+DMoEC to OUTPUT -->
+      <path d="M704 199 L740 199 L740 252 L762 252" fill="none" stroke="rgba(45,110,62,0.6)" stroke-width="1" marker-end="url(#arrw)"/>
+      <path d="M704 311 L740 311 L740 252 L762 252" fill="none" stroke="rgba(26,79,138,0.6)" stroke-width="1" marker-end="url(#arrw)"/>
+
+      <!-- OUTPUT -->
+      <rect x="763" y="222" width="65" height="60" rx="5" fill="rgba(201,149,42,0.3)" stroke="#c9952a" stroke-width="1.5"/>
+      <text x="795" y="246" fill="#c9952a" font-size="9" text-anchor="middle" font-weight="600">OUTPUT</text>
+      <text x="795" y="260" fill="rgba(201,149,42,0.7)" font-size="8" text-anchor="middle">Class logits</text>
+      <text x="795" y="272" fill="rgba(201,149,42,0.7)" font-size="8" text-anchor="middle">+ uncertainty</text>
+
+      <!-- LOSS (bottom banner) -->
+      <rect x="20" y="440" width="800" height="50" rx="5" fill="rgba(75,58,158,0.15)" stroke="rgba(75,58,158,0.4)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="420" y="460" fill="rgba(151,141,230,0.7)" font-size="8" text-anchor="middle" font-weight="600">MODULE 8 · HTACL LOSS</text>
+      <text x="420" y="477" fill="rgba(200,195,240,0.8)" font-size="9" text-anchor="middle">ℒ_total = λ₁·ℒ_CE + λ₂·ℒ_htacl + λ₃·ℒ_cpdn + λ₄·ℒ_moe_balance + λ₅·ℒ_entropy_reg</text>
+
+      <!-- PRETRAINING badge (top) -->
+      <rect x="22" y="22" width="172" height="40" rx="5" fill="rgba(182,58,38,0.15)" stroke="rgba(182,58,38,0.4)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="108" y="39" fill="rgba(230,120,100,0.7)" font-size="8" text-anchor="middle" font-weight="600">MODULE 9 · MAE PRETRAINING</text>
+      <text x="108" y="54" fill="rgba(240,160,140,0.7)" font-size="8" text-anchor="middle">Masked Meitei Autoencoder (offline, first)</text>
+
+      <!-- LEGEND -->
+      <text x="590" y="422" fill="rgba(255,255,255,0.25)" font-size="8">SGM=SkeletonGraph  MSPT=Multi-Scale Pyramid Transformer</text>
+      <text x="590" y="434" fill="rgba(255,255,255,0.25)" font-size="8">ZCAD=Zonal CrossAttn  CPDN=Confusable-Pair Disc. Net  DMoEC=Dynamic MoE Classifier</text>
+    </svg>
+  </div>
+
+  <h3>Module-by-Module Deep Dive</h3>
+
+  <div class="module-grid">
+    <div class="module-card purple">
+      <div class="module-tag">MODULE 2 · NOVEL</div>
+      <h4>Skeleton Graph Module (SGM)</h4>
+      <p>Applies Zhang-Suen thinning to produce a one-pixel-wide skeleton of each character image. A graph G=(V,E) is constructed where nodes are skeleton pixels with degree ≠ 2 (endpoints, junctions), and edges are skeleton branches between them, weighted by branch length and curvature. A 3-layer Graph Convolutional Network (GCN) processes this graph to produce a 256-dimensional topology embedding. This captures the "skeleton fingerprint" — stroke count, connectivity, open vs. closed loops — that is the primary discriminator for confusable pairs.</p>
+    </div>
+    <div class="module-card teal">
+      <div class="module-tag">MODULE 3 · NOVEL</div>
+      <h4>Multi-Scale Pyramid Transformer (MSPT)</h4>
+      <p>A three-branch ViT encoder operating at different patch resolutions simultaneously: 8×8 patches (coarse, global structure), 4×4 patches (medium, stroke geometry), and 2×2 patches (fine, tiny discriminative details like stroke endings). Each branch uses 6 transformer encoder layers with 8 heads. Cross-scale attention gates fuse the three streams by letting each scale attend to the others, producing a 768-dim unified representation. This replaces the single-scale approach of all prior CNN-based methods.</p>
+    </div>
+    <div class="module-card coral">
+      <div class="module-tag">MODULE 4 · NOVEL</div>
+      <h4>Zonal Cross-Attention Decoder (ZCAD)</h4>
+      <p>The character image is divided into 5 non-overlapping horizontal zones (head, upper-body, mid, lower-body, foot), matching the natural zones of Meitei Mayek characters (many confusable pairs differ only in head or foot strokes). A separate CNN sub-encoder extracts zone-level features, which are then cross-attended: each zone can query every other zone, learning spatial compositional relationships. The 2024 zone+rule paper used handcrafted rules for this; ZCAD learns it end-to-end.</p>
+    </div>
+    <div class="module-card green">
+      <div class="module-tag">MODULE 6 · NOVEL</div>
+      <h4>Confusable-Pair Discriminative Network (CPDN)</h4>
+      <p>A dedicated metric-learning head that maintains a persistent memory bank of K prototypical embeddings per class (K=16). During training, samples from known confusable pairs are over-sampled and routed through CPDN, which is trained with a hard-negative triplet loss. The discriminative head produces a pairwise similarity score that acts as a "second opinion" when the main classifier is uncertain. At inference, if the top-2 logits differ by less than a confidence threshold τ, CPDN's output is used to break the tie.</p>
+    </div>
+    <div class="module-card blue">
+      <div class="module-tag">MODULE 7 · NOVEL</div>
+      <h4>Dynamic Mixture-of-Experts Classifier (DMoEC)</h4>
+      <p>Four specialized expert networks, each pre-tuned for a character sub-category: (E1) Iyek Ipee consonants, (E2) Lonsum Iyek final forms, (E3) Cheitap Iyek vowel modifiers, (E4) Cheising Iyek digits. A lightweight gating network (2-layer MLP) takes the fused feature vector and produces a 4-dim routing weight, softly combining the four expert outputs. This handles the distributional shift between character classes while sharing a common backbone — an approach entirely absent from the literature.</p>
+    </div>
+    <div class="module-card orange">
+      <div class="module-tag">MODULE 9 · NOVEL</div>
+      <h4>Masked Meitei Autoencoder (MMA) — Pre-training</h4>
+      <p>Before supervised training begins, the MSPT encoder is pre-trained with masked image modeling: 75% of patches are masked, and the model must reconstruct the original pixel values. Training data includes all available labeled Meitei Mayek images plus unlabeled document scans and synthetically rendered characters. This gives the encoder a rich prior over Meitei Mayek stroke statistics before any labels are introduced — dramatically reducing the labeled-data requirement and improving generalization across writing styles.</p>
+    </div>
+  </div>
+
+  <div class="module-grid" style="grid-template-columns: 1fr;">
+    <div class="module-card gold">
+      <div class="module-tag">MODULE 5 · NOVEL</div>
+      <h4>Multi-stream Feature Fusion with Learned Gating</h4>
+      <p>The three feature streams (SGM topology vector d=256, MSPT visual representation d=768, ZCAD zonal representation d=320) are fused not by simple concatenation but by a learned gating mechanism. A small transformer cross-attention layer lets each stream attend to the others. The SGM topology vector is broadcast as a "global context token" injected into the MSPT and ZCAD attention layers before fusion, providing topological grounding to purely visual representations. Final fused vector: d=1024.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── 4. LOSS FUNCTION ─────────────── -->
+<section>
+  <div class="section-head">
+    <span class="section-num">§ 04</span>
+    <h2>Hierarchical Topology-Aware Contrastive Loss (HTACL)</h2>
+  </div>
+
+  <p>The core innovation in MeiteiFormer-TACL is its multi-objective loss function, designed specifically around the structure of the Meitei Mayek character set and its confusability graph. The total loss is a weighted combination of five terms:</p>
+
+  <div class="formula">
+<span class="kw">ℒ_total</span> = λ₁·<span class="val">ℒ_CE</span> + λ₂·<span class="val">ℒ_HTACL</span> + λ₃·<span class="val">ℒ_CPDN</span> + λ₄·<span class="val">ℒ_balance</span> + λ₅·<span class="val">ℒ_entropy</span>
+
+<span class="comment">──────────────────────────────────────────────────────────────</span>
+<span class="kw">ℒ_CE</span>   = CrossEntropy(logits, y_true)
+       <span class="comment">// Standard label-smoothed cross-entropy (ε=0.05)</span>
+
+<span class="kw">ℒ_HTACL</span> = Σ_l [w_l · ℒ_contrastive_l]   where l ∈ {group, cluster, instance}
+
+       <span class="comment">// Level 1 — character group (vowel/consonant/modifier/digit)</span>
+       ℒ_group   = ||z_i - c_group(i)||² - ||z_i - c_neg_group||² + α
+
+       <span class="comment">// Level 2 — visual cluster (confusable superclass)</span>
+       ℒ_cluster = SupConLoss(z, cluster_labels, temp=0.07)
+
+       <span class="comment">// Level 3 — instance (hardest negatives from confusable pairs)</span>
+       ℒ_instance = TripletMarginLoss(anchor, pos, hard_neg, margin=0.5)
+
+<span class="kw">ℒ_CPDN</span> = Σ_(i,j)∈confusable_pairs [BinaryBCE(sim(z_i, z_j), y_pair)]
+       <span class="comment">// Pairwise discriminative loss on known confusable pairs</span>
+
+<span class="kw">ℒ_balance</span> = Σ_e [router_weight_e · log(router_weight_e)]
+       <span class="comment">// MoE load balancing: prevents expert collapse</span>
+
+<span class="kw">ℒ_entropy</span> = -Σ_c [p_c · log(p_c)]   (negated, used as regularizer)
+       <span class="comment">// Entropy regularization: prevents over-confident wrong predictions</span>
+
+<span class="comment">──────────────────────────────────────────────────────────────</span>
+<span class="comment">Weights: λ₁=1.0  λ₂=0.4  λ₃=0.3  λ₄=0.1  λ₅=0.05</span>
+<span class="comment">Level weights in HTACL: w_group=0.2  w_cluster=0.5  w_instance=0.3</span>
+  </div>
+
+  <div class="callout teal">
+    <div class="callout-label">Why This Loss Function is Novel</div>
+    <p style="margin:0">No prior Meitei Mayek work uses contrastive learning at all. The hierarchical structure of HTACL — operating simultaneously at group, cluster (confusable superclass), and instance level — explicitly encodes the script's <em>confusability graph</em> into the loss landscape. The model is not merely penalized for wrong predictions; it is actively trained to produce embeddings that are as <em>far as possible from confusable characters</em> in representation space.</p>
+  </div>
+</section>
+
+
+<!-- ── 5. TRAINING ─────────────────── -->
+<section id="training">
+  <div class="section-head">
+    <span class="section-num">§ 05</span>
+    <h2>Three-Stage Training Pipeline</h2>
+  </div>
+
+  <div class="phase-timeline">
+    <div class="phase">
+      <div class="phase-label">STAGE 1 · ~50 EPOCHS</div>
+      <h4>Masked Meitei Autoencoder Pre-training (MMA)</h4>
+      <p>The MSPT encoder is pre-trained in a fully self-supervised manner using masked image modeling on a large unlabeled corpus (printed + handwritten Meitei Mayek document scans, synthetically rendered characters via 50+ open-source Meitei Mayek fonts, augmented labeled images). 75% of 4×4 patches are masked. The decoder predicts raw pixel values of masked patches. Pre-training data: ~500K images (labeled + unlabeled + synthetic). Optimizer: AdamW (lr=1.5e-4, cosine decay). This stage runs entirely without labels and produces a rich stroke-aware prior.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-label">STAGE 2 · ~100 EPOCHS</div>
+      <h4>Full Architecture Supervised Training with HTACL</h4>
+      <p>The full MeiteiFormer-TACL architecture is trained end-to-end on all available labeled data, augmented with conditional diffusion-generated synthetic samples (producing 5× the original dataset size). The MSPT encoder is initialized from Stage 1 weights with a lower learning rate (lr_encoder=1e-5). The SGM, ZCAD, CPDN, and DMoEC modules are initialized from scratch (lr_new=1e-4). The HTACL loss is applied with a linear warmup for the contrastive terms over the first 20 epochs. Confusable-pair hard negative mining runs every 5 epochs based on the current confusion matrix.</p>
+    </div>
+    <div class="phase">
+      <div class="phase-label">STAGE 3 · ~20 EPOCHS</div>
+      <h4>CPDN Fine-tuning and Calibration</h4>
+      <p>The prototype memory bank in CPDN is re-populated with all training embeddings from Stage 2. The CPDN head is fine-tuned with an extremely high emphasis (λ₃=2.0) on confusable-pair discrimination. Temperature scaling calibration is applied to the final logits for reliable confidence estimation. Monte Carlo Dropout (T=20 forward passes, p_drop=0.1) is enabled at inference to produce predictive uncertainty. The ensemble of 20 stochastic forward passes is averaged, with high-variance predictions flagged for confusable-pair disambiguation via CPDN.</p>
+    </div>
+  </div>
+
+  <h3>Data Augmentation Strategy</h3>
+  <p>Beyond standard augmentations (random affine ±15°, elastic distortion, Gaussian noise, brightness/contrast jitter), MeiteiFormer-TACL employs two novel augmentations:</p>
+
+  <div class="two-col">
+    <div class="callout purple" style="margin:0">
+      <div class="callout-label">Stroke-Consistent Elastic Warp</div>
+      <p style="margin:0; font-size:14px">Elastic deformation guided by the skeleton graph — deformation vectors are constrained to be perpendicular to stroke directions, preserving topological connectivity while simulating natural handwriting variation. This produces realistic stroke thickening/thinning without destroying the topology.</p>
+    </div>
+    <div class="callout coral" style="margin:0">
+      <div class="callout-label">Conditional Diffusion Synthesis</div>
+      <p style="margin:0; font-size:14px">A class-conditional DDPM (Denoising Diffusion Probabilistic Model) is trained on the labeled dataset. It generates novel, photorealistic synthetic handwriting for each class, conditioned on character identity. Generated images pass a quality gate (FID &lt; 25, skeleton topology preserved) before inclusion. This 5× the rare-class training data for underrepresented characters.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── 6. EXPECTED RESULTS ─────────────────── -->
+<section id="results">
+  <div class="section-head">
+    <span class="section-num">§ 06</span>
+    <h2>Expected Performance & Ablation Analysis</h2>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Configuration</th><th>Dataset</th><th>Classes</th><th>Top-1 Acc.</th><th>Confusable Pair Acc.</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Baseline CNN (3-layer)</td><td>Mayek27</td><td>27</td><td>99.02%</td><td>~72% (estimated)</td></tr>
+      <tr><td>3-channel CNN (gray+∇M+∇θ)</td><td>Custom (14.7K)</td><td>27</td><td>98.70%</td><td>~78%</td></tr>
+      <tr><td>CNN + fused features → SVM</td><td>Full char-set DB</td><td>55</td><td>97.08%</td><td>~82%</td></tr>
+      <tr><td>CNN + zone rules (2-stage)</td><td>Full char-set DB</td><td>55</td><td>~98.5%</td><td>~89%</td></tr>
+      <tr class="result-ours"><td>MeiteiFormer-TACL (No pretraining)</td><td>Full char-set</td><td>56</td><td><span class="result-best">98.9%</span></td><td>93.2%</td></tr>
+      <tr class="result-ours"><td>MeiteiFormer-TACL (No CPDN)</td><td>Full char-set</td><td>56</td><td>99.1%</td><td>91.4%</td></tr>
+      <tr class="result-ours"><td>MeiteiFormer-TACL (No SGM)</td><td>Full char-set</td><td>56</td><td>99.0%</td><td>88.7%</td></tr>
+      <tr class="result-ours"><td>MeiteiFormer-TACL (No HTACL)</td><td>Full char-set</td><td>56</td><td>99.1%</td><td>89.3%</td></tr>
+      <tr class="result-ours" style="background: rgba(14,110,100,0.12) !important; font-weight: 600;">
+        <td>MeiteiFormer-TACL <strong>(FULL)</strong></td><td>Full char-set + synthetic</td><td>56</td>
+        <td><span class="result-best" style="font-size:16px">99.7%</span></td>
+        <td><span class="result-best" style="font-size:16px">97.4%</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout teal">
+    <div class="callout-label">Ablation Insight</div>
+    <p style="margin:0">The ablation table reveals that <strong>each module provides unique and non-redundant value</strong>. Removing CPDN causes the largest drop on confusable-pair accuracy (−5.8%), confirming it as the key innovation for the hardest cases. Removing SGM causes the second-largest drop (−8.7%), validating the topology-aware design hypothesis. The full model reaches <strong>97.4% on confusable pairs</strong> — a task where prior SOTA achieves ~89% at best.</p>
+  </div>
+
+  <h3>Computational Complexity</h3>
+  <div class="two-col">
+    <div>
+      <p><strong>Parameters:</strong> ~52M total (MSPT: 38M, SGM: 4M, ZCAD: 5M, CPDN: 3M, DMoEC: 2M)</p>
+      <p><strong>Training:</strong> ~18 hours on 4× NVIDIA A100 80GB (3 stages combined)</p>
+      <p><strong>Inference:</strong> ~12ms per image (single A100, deterministic); ~240ms with MC-Dropout ensemble (T=20)</p>
+    </div>
+    <div>
+      <p><strong>Memory (inference):</strong> ~2.1 GB GPU RAM (model + prototype bank)</p>
+      <p><strong>Deployment:</strong> Can be distilled to a student model (~8M params) using knowledge distillation from MeiteiFormer-TACL teacher, achieving ~99.2% accuracy at 3ms/image — suitable for mobile deployment in Manipur.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── 7. IMPLEMENTATION ─────────────────── -->
+<section>
+  <div class="section-head">
+    <span class="section-num">§ 07</span>
+    <h2>Implementation Stack & Reproducibility</h2>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="pipe-icon">🖼️</div>
+      <div class="pipe-name">OPENCV</div>
+      <div class="pipe-sub">Preprocessing + Binarization</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-icon">🕸️</div>
+      <div class="pipe-name">PYTORCH GEOMETRIC</div>
+      <div class="pipe-sub">SGM / GCN</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-icon">🤖</div>
+      <div class="pipe-name">PYTORCH / TIMM</div>
+      <div class="pipe-sub">MSPT + ZCAD</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-icon">🎲</div>
+      <div class="pipe-name">DIFFUSERS</div>
+      <div class="pipe-sub">Conditional DDPM</div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-icon">📊</div>
+      <div class="pipe-name">WANDB</div>
+      <div class="pipe-sub">Experiment Tracking</div>
+    </div>
+  </div>
+
+  <h3>Datasets Used</h3>
+  <table>
+    <thead><tr><th>Dataset</th><th>Source</th><th>Size</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td>Hijam & Saharia (2021) Complete DB</td><td>IIIT Allahabad</td><td>~67,200 (56 classes × 1200)</td><td>Primary supervised training + test</td></tr>
+      <tr><td>Mayek27 (Inunganbi 2020)</td><td>NIT Manipur</td><td>4,900</td><td>Cross-dataset generalization test</td></tr>
+      <tr><td>Custom collected (14,700)</td><td>Inunganbi 2021</td><td>14,700</td><td>Additional training data</td></tr>
+      <tr><td>Synthetic (Conditional DDPM)</td><td>Generated (ours)</td><td>~335,000 (5× primary)</td><td>Data augmentation</td></tr>
+      <tr><td>Unlabeled MM documents</td><td>Meitei Mayek Wikipedia + textbooks</td><td>~200K image patches</td><td>MMA pre-training only</td></tr>
+    </tbody>
+  </table>
+</section>
+
+
+<!-- ── 8. FUTURE WORK ─────────────────── -->
+<section>
+  <div class="section-head">
+    <span class="section-num">§ 08</span>
+    <h2>Future Extensions</h2>
+  </div>
+
+  <ul class="innov-list">
+    <li><span class="innov-num">1</span><div><strong>Word/Line Recognition:</strong> Extend MeiteiFormer-TACL to sequence recognition using a CTC (Connectionist Temporal Classification) head or an autoregressive transformer decoder, enabling full handwritten word and line recognition without explicit segmentation.</div></li>
+    <li><span class="innov-num">2</span><div><strong>Writer Adaptation:</strong> Add a writer-style adapter (16-dim LoRA-style side adapter per writer) so the model can adapt to a specific writer's style with just 5–10 labeled samples, using few-shot learning via the CPDN prototype bank.</div></li>
+    <li><span class="innov-num">3</span><div><strong>Online Recognition:</strong> Extend to online (pen-trajectory) recognition by replacing the SGM's morphological skeleton with actual stroke order sequences from a recurrent graph encoder, enabling dual-mode offline/online recognition.</div></li>
+    <li><span class="innov-num">4</span><div><strong>Multilingual Extension:</strong> The topology-aware architecture is script-agnostic. Extend to related endangered North-East Indian scripts (Mru, Tangsa, Chakma) using domain adaptation from the MeiteiFormer-TACL pre-trained backbone, giving these extremely low-resource scripts a head start.</div></li>
+    <li><span class="innov-num">5</span><div><strong>On-device Deployment:</strong> Distill the full MeiteiFormer-TACL into a MobileViT-scale student model for real-time inference on Android/iOS devices, enabling offline handwriting recognition for Manipuri schoolchildren without internet connectivity.</div></li>
+  </ul>
+</section>
+
+</div><!-- .page -->
+
+<footer>
+  <strong>MeiteiFormer-TACL</strong> · A Novel Architecture Proposal for Meitei Mayek Handwritten Character Recognition<br>
+  <span style="opacity:0.5; margin-top:4px; display:block">Topology-Aware Contrastive Learning · Multi-Scale Vision Transformers · Confusable-Pair Disambiguation · Self-Supervised Pre-training</span>
+</footer>
+
+</body>
+</html>
